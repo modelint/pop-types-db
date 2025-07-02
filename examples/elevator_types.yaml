@@ -1,0 +1,77 @@
+Domain Types:
+  Level Name:
+    inherits: String
+    constraints:
+      regex: '^[A-Za-z0-9][A-Za-z0-9]{0,25}$'
+
+  Distance:
+    inherits: Rational
+    constraints:
+      range:
+        min: 0
+        max: max
+    units: m
+
+  Building Name:
+    inherits: Name
+
+  Bank Name:
+    inherits: Name
+
+  Speed:
+    inherits: Rational
+    units: m/s
+
+  Duration:
+    inherits: Rational
+    constraints:
+      range:
+        min: 0
+        max: max
+    units: s
+
+  Direction:
+    inherits: Boolean
+    constraints:
+      symbol pair: [up, down]
+
+Utility Types:
+
+  Name:
+    inherits: String
+    constraints:
+      regex: '^[A-Za-z0-9][A-Za-z0-9 ]{0,25}$'
+
+  Counter:
+    inherits: Integer
+    constraints:
+      range:
+        min: 0
+        max: max
+    operators:
+      new:
+        - inc
+        - dec
+        - reset
+
+
+Base Types:
+  String:
+    tclral: string
+    python: str
+
+  Integer:
+    tclral: int
+    python: int
+
+  Boolean:
+    tclral: boolean
+    python: bool
+
+  Rational:
+    tclral: double
+    python: float
+
+  Symbolic:
+    tclral: string
+    python: enum
