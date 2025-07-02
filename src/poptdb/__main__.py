@@ -70,6 +70,5 @@ def main():
     if args.verbose:
         print("\nNo problemo")
 
-
-if __name__ == "__main__":
-    main()
+# if __name__ == "__main__":
+#     main()
