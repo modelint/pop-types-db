@@ -27,8 +27,11 @@ class TypesDomain:
         if getattr(self, "_initialized", False):
             return
         self._initialized = True
+        self.types_path = None
 
     def initialize(self, types_path: Path):
+        self.types_path = types_path
+        tparse = load_types(types_path)
         pass
 
 
