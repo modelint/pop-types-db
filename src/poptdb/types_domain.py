@@ -87,75 +87,102 @@ class TypesDomain:
             ], tr=utility_tr)
             # TODO: Process operator exclusion
 
-            # Process either a single component or multi component type
-            components = type_data.get("components")
-            if components:
-                pass  # TODO: Process multiple components
-            else:
-                # There's only one component in this User Type
-                inherited_type = type_data["inherits"][0]
-                constraint = type_data["inherits"][1:]
-                if inherited_type not in self.inserted_types:
-                    self.forward_types.append({type_name: type_data})
-                    continue
+            # In most cases the type has only a single unnamed component and we just name it "value"
+            num_components = len(type_data['components'])
+            component_name = "value"
+            if num_components == 0:
+                pass  # TODO: must be at least one error
+            elif num_components > 1:
+                component_name = type_data["name"]
 
-                Relvar.insert(db=tdb, relvar="Inheritance", tuples=[
-                    Inheritance_i(User_type=type_name, Inherited_type=inherited_type),
-                ], tr=utility_tr)
-
-                self.pop_component(user_type=type_name, inherited_type=inherited_type,
-                                   constraint=constraint, tr=utility_tr)
+            for c in type_data['components']:
+                self.pop_component(ut_name=type_name, c_name=component_name, c_parse=c, tr=utility_tr)
+            if self.forward_types:
+                pass  # TODO: handle forward types
             Transaction.execute(db=tdb, name=utility_tr)
             self.inserted_types.add(type_name)
 
-    def pop_component(self, user_type: str, inherited_type: str, constraint, tr: str, comp_name: str = "value"):
+    def pop_component(self, ut_name: str, c_name: str, c_parse, tr: str):
         """
+        Insert component relations into the db
 
-        :param user_type:
-        :param inherited_type:
-        :param constraint:
-        :param comp_name:
-        :param tr:
+        :param ut_name:  Name of the User Type
+        :param c_name:  Name of the component
+        :param c_parse:  A parsed component record
+        :param tr:  The open transaction for a User Type
         """
+        inherited_type = c_parse["from"]
+        if inherited_type not in self.inserted_types:
+            # We can't inherit from this type yet, so we'll save it for a later pass
+            self.forward_types.append({inherited_type: c_parse})
+            return
+
+        Relvar.insert(db=tdb, relvar="Inheritance", tuples=[
+            Inheritance_i(User_type=ut_name, Inherited_type=inherited_type),
+        ], tr=tr)
+
         Relvar.insert(db=tdb, relvar="Component", tuples=[
-            Component_i(Name=comp_name, User_type=user_type)
+            Component_i(Name=c_name, User_type=ut_name)
         ], tr=tr)
         Relvar.insert(db=tdb, relvar="Value Subset", tuples=[
-            Value_Subset_i(Component=comp_name, User_type=user_type,
+            Value_Subset_i(Component=c_name, User_type=ut_name,
                            Constrained_type=inherited_type)
         ], tr=tr)
+
         match inherited_type:
             case 'String':
                 Relvar.insert(db=tdb, relvar="Constraint", tuples=[
-                    Constraint_i(Component=comp_name, User_type=user_type)
+                    Constraint_i(Component=c_name, User_type=ut_name)
                 ], tr=tr)
                 Relvar.insert(db=tdb, relvar="Regular Expression", tuples=[
-                    Regular_Expression_i(Component=comp_name, User_type=user_type,
-                                         Regex=constraint)
+                    Regular_Expression_i(Component=c_name, User_type=ut_name,
+                                         Regex=c_parse["regex"])
                 ], tr=tr)
+                pass
+            case 'Rational':
+                pass
             case 'Integer':
                 Relvar.insert(db=tdb, relvar="Constraint", tuples=[
-                    Constraint_i(Component=comp_name, User_type=user_type)
+                    Constraint_i(Component=c_name, User_type=ut_name)
                 ], tr=tr)
                 Relvar.insert(db=tdb, relvar="Integer Range", tuples=[
-                    Integer_Range_i(Component=comp_name, User_type=user_type)
+                    Integer_Range_i(Component=c_name, User_type=ut_name)
                 ], tr=tr)
-                for r in constraint:
-                    if (r[0] != 'min' and r[1] != 'max') and int(r[0]) > int(r[1]):
-                        pass  # TODO: raise exception must be <=
-                    Relvar.insert(db=tdb, relvar="Integer Subrange", tuples=[
-                        Integer_Subrange_i(Component=comp_name, User_type=user_type,
-                                           Min=r[0], Max=r[1])
-                    ], tr=tr)
-
-                    # TODO: inclusive / exclusive
-                    pass
-            case 'Rational':
-                pass  # TODO: Rational Range
+                int_range = c_parse.get('range')
+                if int_range:
+                    for subrange in int_range:
+                        min_val = subrange.get('min')
+                        max_val = subrange.get('max')
+                        min_exclusive = subrange.get('min_inclusive')
+                        max_exclusive = subrange.get('max_inclusive')
+                        pass
+                pass
+                # # for r in constraint:
+                # #     if (r[0] != 'min' and r[1] != 'max') and int(r[0]) > int(r[1]):
+                # #         pass  # TODO: raise exception must be <=
+                # #     Relvar.insert(db=tdb, relvar="Integer Subrange", tuples=[
+                # #         Integer_Subrange_i(Component=c_name, User_type=ut_name,
+                # #                            Min=r[0], Max=r[1])
+                #     ], tr=tr)
+                pass
             case 'Boolean':
-                pass  # TODO: General rule
+                pass
+            case 'Symbol':
+                pass
             case _:
-                pass  # TODO: Throw exception
+                pass
+
+        pass
+
+        #
+        #             # TODO: inclusive / exclusive
+        #             pass
+        #     case 'Rational':
+        #         pass  # TODO: Rational Range
+        #     case 'Boolean':
+        #         pass  # TODO: General rule
+        #     case _:
+        #         pass  # TODO: Throw exception
 
     def pop_base_types(self):
         basetr = "basetype"

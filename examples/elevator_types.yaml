@@ -5,53 +5,53 @@ Domain Types:  # Domain specific types (only of use in a particular modeled doma
 
   Level Name:  # Floor level name like Mezzanine, 1, 2, Lobby, L, etc
     components:
-      name: String
-      regex: '^[A-Za-z0-9][A-Za-z0-9]{0,25}$'   # Allows 25 alphanumeric characters, uper or lower case, no spaces
+      - from: String
+        regex: '^[A-Za-z0-9][A-Za-z0-9]{0,25}$'   # Allows 25 alphanumeric characters, uper or lower case, no spaces
 
   Distance:  # Vertical distance in an elevator Shaft
     components:
-      name: Rational
-      units: m   # Meters
-      range:
-        - min: 0.0  # No max specified, so it is the max rational value on the platform
+      - from: Rational
+        units: m   # Meters
+        range:
+          - "[0.0, max]"
 
   Building Name:  # Name of the Building, ex: "Pigsly Plaza"
     components:
-      name: Name  # This is an inherited utility type
+      - from: Name  # This is an inherited utility type
 
   Bank Name:  # Name of the elevator Bank, ex: "Penthouse Express"
     components:
-      name: Name
+      - from: Name
 
   Speed:  # The elevator Cabin speed, for example
     components:
-      name: Rational  # No min or max specified
-      units: m/s  # Meters per second
+      - from: Rational  # No min or max specified
+        units: m/s  # Meters per second
 
   Duration:  # Time
     components:
-      name: Rational
-      units: s  # seconds
-      range:
-        - min: 0.0  # Can't be negative
+      - from: Rational
+        units: s  # seconds
+        range:
+          - "[0.0, max]"
 
   Direction:  # Up or down, using Boolean so we can take advantage of toggle
     components:
-      name: Boolean
-      symbols: [up, down]  # true, false mapping
+      - from: Boolean
+        symbols: [up, down]  # true, false mapping
 
 Utility Types:  # These types are commonly useful across multiple domains without any domain specific meaning
 
   Name:  # For general descriptive naming purposes
     components:
-      name: String
-      regex: '^[A-Za-z0-9][A-Za-z0-9 ]{0,49}$'  # Begin with alphanumeric char, then spaces allowed up to 50 char
+      - from: String
+        regex: '^[A-Za-z0-9][A-Za-z0-9 ]{0,49}$'  # Begin with alphanumeric char, then spaces allowed up to 50 char
 
   Counter:  # For counting things
     components:
-      name: Integer
-      range:
-        - min: 0
+      - from: Integer
+        range:
+          - "[0, max]"
     operators:
       new:
         - increment
