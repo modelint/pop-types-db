@@ -1,60 +1,65 @@
-Domain Types:
-  Level Name:
+# Here we specify the types we need for a modeled domain
+
+
+Domain Types:  # Domain specific types (only of use in a particular modeled domain)
+
+  Level Name:  # Floor level name like Mezzanine, 1, 2, Lobby, L, etc
     components:
       name: String
-      regex: '^[A-Za-z0-9][A-Za-z0-9]{0,25}$'
+      regex: '^[A-Za-z0-9][A-Za-z0-9]{0,25}$'   # Allows 25 alphanumeric characters, uper or lower case, no spaces
 
-  Distance:
+  Distance:  # Vertical distance in an elevator Shaft
     components:
       name: Rational
-      units: m
+      units: m   # Meters
       range:
-        - min: 0
+        - min: 0.0  # No max specified, so it is the max rational value on the platform
 
-  Building Name:
+  Building Name:  # Name of the Building, ex: "Pigsly Plaza"
+    components:
+      name: Name  # This is an inherited utility type
+
+  Bank Name:  # Name of the elevator Bank, ex: "Penthouse Express"
     components:
       name: Name
 
-  Bank Name:
+  Speed:  # The elevator Cabin speed, for example
     components:
-      name: Name
+      name: Rational  # No min or max specified
+      units: m/s  # Meters per second
 
-  Speed:
+  Duration:  # Time
     components:
       name: Rational
-      units: m/s
-
-  Duration:
-    components:
-      name: Rational
-      units: s
+      units: s  # seconds
       range:
-        - min: 0
+        - min: 0.0  # Can't be negative
 
-  Direction:
+  Direction:  # Up or down, using Boolean so we can take advantage of toggle
     components:
       name: Boolean
-      symbols: [up, down]
+      symbols: [up, down]  # true, false mapping
 
-Utility Types:
+Utility Types:  # These types are commonly useful across multiple domains without any domain specific meaning
 
-  Name:
+  Name:  # For general descriptive naming purposes
     components:
       name: String
-      regex: '^[A-Za-z0-9][A-Za-z0-9 ]{0,25}$'
+      regex: '^[A-Za-z0-9][A-Za-z0-9 ]{0,49}$'  # Begin with alphanumeric char, then spaces allowed up to 50 char
 
-  Counter:
+  Counter:  # For counting things
     components:
       name: Integer
       range:
         - min: 0
     operators:
       new:
-        - inc
-        - dec
-        - reset
+        - increment
+        - decrement
+        - reset  # Sets the counter value back to zero
 
-Base Types:
+Base Types:  # These types are implemented domains on a wide variety of platforms, no inheritance can be specified
+
   String:
     tclral: string
     python: str
