@@ -1,35 +1,53 @@
 Domain Types:
   Level Name:
-    inherits: [String, '^[A-Za-z0-9][A-Za-z0-9]{0,25}$']
+    components:
+      name: String
+      regex: '^[A-Za-z0-9][A-Za-z0-9]{0,25}$'
 
   Distance:
-    inherits: [Rational, 0, max]
-    units: m
+    components:
+      name: Rational
+      units: m
+      range:
+        - min: 0
 
   Building Name:
-    inherits: Name
+    components:
+      name: Name
 
   Bank Name:
-    inherits: Name
+    components:
+      name: Name
 
   Speed:
-    inherits: Rational
-    units: m/s
+    components:
+      name: Rational
+      units: m/s
 
   Duration:
-    inherits: [Rational, 0, max]
-    units: s
+    components:
+      name: Rational
+      units: s
+      range:
+        - min: 0
 
   Direction:
-    inherits: Boolean, [up, down]
+    components:
+      name: Boolean
+      symbols: [up, down]
 
 Utility Types:
 
   Name:
-    inherits: [String, '^[A-Za-z0-9][A-Za-z0-9 ]{0,25}$']
+    components:
+      name: String
+      regex: '^[A-Za-z0-9][A-Za-z0-9 ]{0,25}$'
 
   Counter:
-    inherits: [Integer, [0, max] ]
+    components:
+      name: Integer
+      range:
+        - min: 0
     operators:
       new:
         - inc
