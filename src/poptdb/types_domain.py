@@ -43,6 +43,8 @@ class TypesDomain:
         self.types_path = None
         self.tparse = None
         self.tdb_path = Path(__file__).parent / 'typesdb.ral'  # Empty types database
+        self.forward_types = list()
+        self.inserted_types = set()
 
     def initialize(self, types_path: Path):
         self.types_path = types_path
@@ -58,6 +60,7 @@ class TypesDomain:
         Database.load(db=tdb, fname=str(self.tdb_path))
 
         self.pop_base_types()
+        self.pop_utility_types()
         self.print()
         Database.save(db=tdb, fname=f"{tdb}.ral")
 
@@ -69,6 +72,101 @@ class TypesDomain:
             with redirect_stdout(f):
                 Relvar.printall(db=tdb)
 
+    def pop_utility_types(self):
+        """
+
+        """
+        utility_tr = "utility"
+        for type_name, type_data in self.tparse['Utility Types'].items():
+            inherited_type = type_data["inherits"]
+            if inherited_type not in self.inserted_types:
+                self.forward_types.append({type_name: type_data})
+                continue
+
+            Transaction.open(db=tdb, name=utility_tr)
+            Relvar.insert(db=tdb, relvar="Type", tuples=[Type_i(Name=type_name),], tr=utility_tr)
+            Relvar.insert(db=tdb, relvar="User Type", tuples=[
+                User_Type_i(Name=type_name, Category="utility")
+            ], tr=utility_tr)
+            Relvar.insert(db=tdb, relvar="Inheritance", tuples=[
+                Inheritance_i(User_type=type_name, Inherited_type=inherited_type),
+            ], tr=utility_tr)
+            if not type_data.get("components"):
+                # Multiple components not specified, so just insert a single component
+                component_name = "value"  # Name for component when there's only one in a User Type
+                self.pop_component(user_type=type_name, comp_name="value", constraint=)
+                Relvar.insert(db=tdb, relvar="Component", tuples=[
+                    Component_i(Name="value", User_type=type_name)
+                ], tr=utility_tr)
+                for c, c_data in type_data.get("constraints").items():
+                    match c:
+                        case 'range':
+                            if inherited_type not in {"Rational", "Integer"}:
+                                pass  # TODO: Throw exception
+                            pass
+                        case 'symbol pair':
+                            pass
+                        case 'regex':
+                            if inherited_type != "String":
+                                pass  # TODO: Throw exception
+                            Relvar.insert(db=tdb, relvar="Value Subset", tuples=[
+                                Value_Subset_i(Component=component_name, User_type=type_name,
+                                               Constrained_type=inherited_type)
+                            ], tr=utility_tr)
+                            Relvar.insert(db=tdb, relvar="Constraint", tuples=[
+                                Constraint_i(Component=component_name, User_type=type_name)
+                            ], tr=utility_tr)
+                            Relvar.insert(db=tdb, relvar="Regular Expression", tuples=[
+                                Regular_Expression_i(Component=component_name, User_type=type_name,
+                                                     Regex=c_data)
+                            ], tr=utility_tr)
+                        case _:
+                            pass  # TODO: Throw exception
+            Transaction.execute(db=tdb, name=utility_tr)
+            self.inserted_types.add(type_name)
+
+
+
+
+
+            pass
+        pass
+
+    def pop_component(self, user_type:str, comp_name: str, constraint, tr: str):
+        """
+
+        :param comp_name:
+        :param constraint:
+        :param tr:
+        """
+        Relvar.insert(db=tdb, relvar="Component", tuples=[
+            Component_i(Name="value", User_type=user_type)
+        ], tr=tr)
+        for c, c_data in type_data.get("constraints").items():
+            match c:
+                case 'range':
+                    if inherited_type not in {"Rational", "Integer"}:
+                        pass  # TODO: Throw exception
+                    pass
+                case 'symbol pair':
+                    pass
+                case 'regex':
+                    if inherited_type != "String":
+                        pass  # TODO: Throw exception
+                    Relvar.insert(db=tdb, relvar="Value Subset", tuples=[
+                        Value_Subset_i(Component=component_name, User_type=type_name,
+                                       Constrained_type=inherited_type)
+                    ], tr=utility_tr)
+                    Relvar.insert(db=tdb, relvar="Constraint", tuples=[
+                        Constraint_i(Component=component_name, User_type=type_name)
+                    ], tr=utility_tr)
+                    Relvar.insert(db=tdb, relvar="Regular Expression", tuples=[
+                        Regular_Expression_i(Component=component_name, User_type=type_name,
+                                             Regex=c_data)
+                    ], tr=utility_tr)
+                case _:
+                    pass  # TODO: Throw exception
+        pass
 
     def pop_base_types(self):
         basetr = "basetype"
@@ -88,6 +186,7 @@ class TypesDomain:
                     Implementation_i(Base_type=type_name, Platform=pname, Physical_type=physical_name)
                 ], tr=basetr)
             Transaction.execute(db=tdb, name=basetr)
+            self.inserted_types.add(type_name)
             pass
         pass
 
