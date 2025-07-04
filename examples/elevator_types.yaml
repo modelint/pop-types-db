@@ -53,7 +53,7 @@ Utility Types:  # These types are commonly useful across multiple domains withou
         range:
           - "[0, max]"
     operators:
-      new:
+      add:
         - increment
         - decrement
         - reset  # Sets the counter value back to zero

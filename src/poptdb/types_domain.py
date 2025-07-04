@@ -122,6 +122,10 @@ class TypesDomain:
 
             for c in type_data['components']:
                 self.pop_component(ut_name=type_name, c_name=component_name, c_parse=c, tr=domain_tr)
+            ops = type_data.get('operators')
+            if ops:
+                for o in ops:
+                    pass
             if self.forward_types:
                 pass  # TODO: handle forward types
             Transaction.execute(db=tdb, name=domain_tr)
@@ -152,6 +156,18 @@ class TypesDomain:
 
             for c in type_data['components']:
                 self.pop_component(ut_name=type_name, c_name=component_name, c_parse=c, tr=utility_tr)
+            ops = type_data.get('operators')
+            if ops:
+                add_ops = ops['add']
+                if add_ops:
+                    for o in add_ops:
+                        Relvar.insert(db=tdb, relvar="Operator", tuples=[
+                            Operator_i(Name=o, Type=type_name)
+                        ], tr=utility_tr)
+                x_ops = ops.get('exclude')
+                if x_ops:
+                    for o in x_ops:
+                        pass
             if self.forward_types:
                 pass  # TODO: handle forward types
             Transaction.execute(db=tdb, name=utility_tr)
