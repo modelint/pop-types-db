@@ -64,13 +64,15 @@ class TypesDomain:
         self._initialized = True
         self.types_path = None
         self.tparse = None
+        self.output_fname = "typesdb"  # If no name is specified at initialize
         self.tdb_path = Path(__file__).parent / 'typesdb.ral'  # Empty types database
         self.forward_types = list()
         self.inserted_types = set()
 
-    def initialize(self, types_path: Path):
+    def initialize(self, types_path: Path, output_fname: str):
         self.types_path = types_path
         self.tparse = load_types(types_path)
+        self.output_fname = output_fname if output_fname else self.output_fname
 
         # Initiate a connection to the TclRAL database
         from pyral.database import Database  # Metamodel load or creates has already initialized the DB session
@@ -78,20 +80,20 @@ class TypesDomain:
         Database.open_session(tdb)
 
         # Start with an empty metamodel repository
-        _logger.info("Loading Blueprint MBSE metamodel repository schema")
+        _logger.info("Loading Blueprint Types schema")
         Database.load(db=tdb, fname=str(self.tdb_path))
 
         self.pop_base_types()
         self.pop_utility_types()
         self.pop_domain_types()
         self.print()
-        Database.save(db=tdb, fname=f"{tdb}.ral")
+        Database.save(db=tdb, fname=f"{self.output_fname}.ral")
 
     def print(self):
         """
         Print out the user domain schema
         """
-        with open(f"{tdb}.txt", 'w') as f:
+        with open(f"{self.output_fname}.txt", 'w') as f:
             with redirect_stdout(f):
                 Relvar.printall(db=tdb)
 

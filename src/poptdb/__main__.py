@@ -32,6 +32,8 @@ def parse(cl_input):
     parser = argparse.ArgumentParser(description=_progname)
     parser.add_argument('-t', '--types', action='store',
                         help='Path to the types yaml file')
+    parser.add_argument('-o', '--output', action='store',
+                        help='Name of the output database')
     parser.add_argument('-D', '--debug', action='store_true',
                         help='Debug mode'),
     parser.add_argument('-L', '--log', action='store_true',
@@ -64,7 +66,7 @@ def main():
     if args.types:
         types_path = Path(args.types).resolve()
         t = TypesDomain()
-        t.initialize(types_path=types_path)
+        t.initialize(types_path=types_path, output_fname=args.output)
 
     logger.info("No problemo")  # We didn't die on an exception, basically
     if args.verbose:
