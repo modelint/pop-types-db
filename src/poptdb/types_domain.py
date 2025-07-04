@@ -83,6 +83,7 @@ class TypesDomain:
 
         self.pop_base_types()
         self.pop_utility_types()
+        self.pop_domain_types()
         self.print()
         Database.save(db=tdb, fname=f"{tdb}.ral")
 
@@ -95,6 +96,36 @@ class TypesDomain:
                 Relvar.printall(db=tdb)
 
 
+
+    def pop_domain_types(self):
+        """
+
+        """
+        domain_tr = "domain"
+        for type_name, type_data in self.tparse['Domain Types'].items():
+
+            # Create User Type and Inheritance
+            Transaction.open(db=tdb, name=domain_tr)
+            Relvar.insert(db=tdb, relvar="Type", tuples=[Type_i(Name=type_name), ], tr=domain_tr)
+            Relvar.insert(db=tdb, relvar="User Type", tuples=[
+                User_Type_i(Name=type_name, Category="domain")
+            ], tr=domain_tr)
+            # TODO: Process operator exclusion
+
+            # In most cases the type has only a single unnamed component and we just name it "value"
+            num_components = len(type_data['components'])
+            component_name = "value"
+            if num_components == 0:
+                pass  # TODO: must be at least one error
+            elif num_components > 1:
+                component_name = type_data["name"]
+
+            for c in type_data['components']:
+                self.pop_component(ut_name=type_name, c_name=component_name, c_parse=c, tr=domain_tr)
+            if self.forward_types:
+                pass  # TODO: handle forward types
+            Transaction.execute(db=tdb, name=domain_tr)
+            self.inserted_types.add(type_name)
 
     def pop_utility_types(self):
         """
@@ -164,16 +195,33 @@ class TypesDomain:
                 ], tr=tr)
                 pass
             case 'Rational':
+                rat_range = c_parse.get('range')
+                if rat_range:
+                    Relvar.insert(db=tdb, relvar="Constraint", tuples=[
+                        Constraint_i(Component=c_name, User_type=ut_name)
+                    ], tr=tr)
+                    Relvar.insert(db=tdb, relvar="Rational Range", tuples=[
+                        Rational_Range_i(Component=c_name, User_type=ut_name)
+                    ], tr=tr)
+                    for subrange in rat_range:
+                        sr_parse = parse_range(subrange)
+                        for extent in sr_parse:
+                            if extent.value in {'min', 'max'}:
+                                continue
+                            Relvar.insert(db=tdb, relvar="Rational Extent", tuples=[
+                                Integer_Extent_i(Component=c_name, User_type=ut_name, Value=float(extent.value),
+                                                 Direction=extent.extent, Exclusive=extent.exclusive)
+                            ], tr=tr)
                 pass
             case 'Integer':
-                Relvar.insert(db=tdb, relvar="Constraint", tuples=[
-                    Constraint_i(Component=c_name, User_type=ut_name)
-                ], tr=tr)
-                Relvar.insert(db=tdb, relvar="Integer Range", tuples=[
-                    Integer_Range_i(Component=c_name, User_type=ut_name)
-                ], tr=tr)
                 int_range = c_parse.get('range')
                 if int_range:
+                    Relvar.insert(db=tdb, relvar="Constraint", tuples=[
+                        Constraint_i(Component=c_name, User_type=ut_name)
+                    ], tr=tr)
+                    Relvar.insert(db=tdb, relvar="Integer Range", tuples=[
+                        Integer_Range_i(Component=c_name, User_type=ut_name)
+                    ], tr=tr)
                     for subrange in int_range:
                         sr_parse = parse_range(subrange)
                         for extent in sr_parse:
@@ -186,20 +234,22 @@ class TypesDomain:
                         pass
 
                 pass
-                # # for r in constraint:
-                # #     if (r[0] != 'min' and r[1] != 'max') and int(r[0]) > int(r[1]):
-                # #         pass  # TODO: raise exception must be <=
-                # #     Relvar.insert(db=tdb, relvar="Integer Subrange", tuples=[
-                # #         Integer_Subrange_i(Component=c_name, User_type=ut_name,
-                # #                            Min=r[0], Max=r[1])
-                #     ], tr=tr)
-                pass
             case 'Boolean':
-                pass
+                symbols = c_parse.get('symbols')
+                if symbols:
+                    tsym, fsym = symbols
+                    Relvar.insert(db=tdb, relvar="Constraint", tuples=[
+                        Constraint_i(Component=c_name, User_type=ut_name)
+                    ], tr=tr)
+                    Relvar.insert(db=tdb, relvar="Boolean Symbol Pair", tuples=[
+                        Boolean_Symbol_Pair_i(Component=c_name, User_type=ut_name, True_symbol=tsym, False_symbol=fsym)
+                    ], tr=tr)
             case 'Symbol':
                 pass
             case _:
-                pass
+                rule = c_parse.get('rule')
+                if rule:
+                    pass  # TODO: create rule
 
         pass
 
