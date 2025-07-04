@@ -61,21 +61,29 @@ Utility Types:  # These types are commonly useful across multiple domains withou
 Base Types:  # These types are implemented domains on a wide variety of platforms, no inheritance can be specified
 
   String:
-    tclral: string
-    python: str
+    platforms:
+      tclral: string
+      python: str
 
   Integer:
-    tclral: int
-    python: int
+    platforms:
+      tclral: int
+      python: int
 
   Boolean:
-    tclral: boolean
-    python: bool
+    platforms:
+      tclral: boolean
+      python: bool
+    operators:
+      - set
+      - unset
 
   Rational:
-    tclral: double
-    python: float
+    platforms:
+      tclral: double
+      python: float
 
   Symbolic:
-    tclral: string
-    python: enum
+    platforms:
+      tclral: string
+      python: enum

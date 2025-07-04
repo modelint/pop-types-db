@@ -282,11 +282,11 @@ class TypesDomain:
     def pop_base_types(self):
         basetr = "basetype"
         inserted_platforms = set()
-        for type_name, platforms in self.tparse['Base Types'].items():
+        for type_name, type_data in self.tparse['Base Types'].items():
             Transaction.open(db=tdb, name=basetr)
             Relvar.insert(db=tdb, relvar="Type", tuples=[Type_i(Name=type_name),], tr=basetr)
             Relvar.insert(db=tdb, relvar="Base Type", tuples=[Base_Type_i(Name=type_name)], tr=basetr)
-            for pname, physical_name in platforms.items():
+            for pname, physical_name in type_data["platforms"].items():
                 # Insert the Platform tuple if it hasn't already been encountered
                 if pname not in inserted_platforms:
                     Relvar.insert(db=tdb, relvar="Platform", tuples=[
@@ -296,6 +296,12 @@ class TypesDomain:
                 Relvar.insert(db=tdb, relvar="Implementation", tuples=[
                     Implementation_i(Base_type=type_name, Platform=pname, Physical_type=physical_name)
                 ], tr=basetr)
+            operators = type_data.get("operators")
+            if operators:
+                for o in operators:
+                    Relvar.insert(db=tdb, relvar="Operator", tuples=[
+                        Operator_i(Name=o, Type=type_name)
+                    ], tr=basetr)
             Transaction.execute(db=tdb, name=basetr)
             self.inserted_types.add(type_name)
             pass
