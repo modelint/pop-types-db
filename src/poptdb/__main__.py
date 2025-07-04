@@ -70,5 +70,7 @@ def main():
     if args.verbose:
         print("\nNo problemo")
 
+    logging.shutdown()
+
 if __name__ == "__main__":
     main()

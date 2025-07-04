@@ -6,6 +6,8 @@ from pathlib import Path
 import yaml
 from typing import Any
 from contextlib import redirect_stdout
+from collections import namedtuple
+
 
 # Model Integration
 from pyral.relvar import Relvar
@@ -15,13 +17,33 @@ from pyral.transaction import Transaction
 # Populate Types DB
 from poptdb.typesdb_nt import *
 
+tdb = "typesdb"
+
+RangeExtent = namedtuple('RangeExtent', ['value', 'extent', 'exclusive'])
+
 _logger = logging.getLogger(__name__)
 
 def load_types(path: str | Path) -> dict[str, Any]:
     with open(path, 'r', encoding='utf-8') as f:
         return yaml.safe_load(f)
 
-tdb = "typesdb"
+def parse_range(range_str: str):
+    range_str = range_str.strip()
+
+    # Get exclusive flags from the brackets
+    left = range_str[0]
+    right = range_str[-1]
+    min_exclusive = (left == '(')
+    max_exclusive = (right == ')')
+
+    # Extract and split the inner range
+    inner = range_str[1:-1].strip()
+    parts = [p.strip() for p in inner.split(',')]
+
+    return [
+        RangeExtent(value=parts[0], extent='min', exclusive=min_exclusive),
+        RangeExtent(value=parts[1], extent='max', exclusive=max_exclusive),
+    ]
 
 
 class TypesDomain:
@@ -71,6 +93,8 @@ class TypesDomain:
         with open(f"{tdb}.txt", 'w') as f:
             with redirect_stdout(f):
                 Relvar.printall(db=tdb)
+
+
 
     def pop_utility_types(self):
         """
@@ -151,11 +175,16 @@ class TypesDomain:
                 int_range = c_parse.get('range')
                 if int_range:
                     for subrange in int_range:
-                        min_val = subrange.get('min')
-                        max_val = subrange.get('max')
-                        min_exclusive = subrange.get('min_inclusive')
-                        max_exclusive = subrange.get('max_inclusive')
+                        sr_parse = parse_range(subrange)
+                        for extent in sr_parse:
+                            if extent.value in {'min', 'max'}:
+                                continue
+                            Relvar.insert(db=tdb, relvar="Integer Extent", tuples=[
+                                Integer_Extent_i(Component=c_name, User_type=ut_name, Value=int(extent.value),
+                                                 Direction=extent.extent, Exclusive=extent.exclusive)
+                                          ], tr=tr)
                         pass
+
                 pass
                 # # for r in constraint:
                 # #     if (r[0] != 'min' and r[1] != 'max') and int(r[0]) > int(r[1]):
